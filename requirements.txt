@@ -1,0 +1,9 @@
+tkinter
+tkcalendar
+requests
+sqlite3
+pandas
+openpyxl
+reportlab
+pdf_generator
+
