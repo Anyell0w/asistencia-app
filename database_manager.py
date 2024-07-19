@@ -3,7 +3,7 @@ import sqlite3
 
 class DatabaseManager:
     def __init__(self, db_path):
-        self.conn = sqlite3.connect(db_path)
+        self.conn = sqlite3.connect("./usuarios.db")
         self.cursor = self.conn.cursor()
 
     def insert_user(self, dni, nombres, apellido_paterno, apellido_materno, fecha_registro):
@@ -33,6 +33,11 @@ class DatabaseManager:
         self.cursor.execute(query, (dni,))
         return self.cursor.fetchone()
 
+    def get_users_by_date_interval(self, start_date, end_date):
+        query = "SELECT * FROM usuario WHERE fecha_registro BETWEEN ? AND ?"
+        self.cursor.execute(query, (start_date, end_date))
+        return self.cursor.fetchall()
+
     def get_users_by_date(self, date):
         query = "SELECT * FROM usuario WHERE fecha_registro = ?"
         self.cursor.execute(query, (date,))
@@ -53,5 +58,20 @@ class DatabaseManager:
         self.cursor.execute(query, (start_date, end_date))
         return self.cursor.fetchall()
 
+    def get_user_by_dni_and_date(self, dni, date):
+        query = "SELECT * FROM usuario WHERE dni = ? AND fecha_registro = ?"
+        self.cursor.execute(query, (dni, date))
+        return self.cursor.fetchone()
+
+    def get_user_by_date(self, date):
+        query = "SELECT * FROM usuario WHERE fecha_registro = ?"
+        self.cursor.execute(query, (date,))
+        return self.cursor.fetchall()
+
     def _del_(self):
         self.conn.close()
+
+    def get_column(self):
+        query = "PRAGMA table_info(usuario)"
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
