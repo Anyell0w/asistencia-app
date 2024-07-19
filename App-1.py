@@ -7,7 +7,6 @@ import sqlite3
 import os
 import datetime
 
-
 class APIClient:
     def __init__(self, token):
         self.base_url = 'https://dniruc.apisperu.com/api/v1/dni/'
