@@ -251,7 +251,27 @@ class AttendanceApp:
         PDFGenerator(f"asistencia_{dia}_{hora}.pdf").generar_pdf_del_dia(dia, data)
 
     def generar_pdf_mes(self):
-        pass
+        # elegir el mes
+        mes_window = tk.Toplevel(self.root)
+        mes_window.title("Generar PDF del mes")
 
+        # desplegable para elegir el mes
+        tk.Label(mes_window, text="Seleccione el mes").pack(pady=5)
+        self.mes = tk.StringVar(mes_window)
+        self.mes.set("Enero")
+        self.option_menu_mes = tk.OptionMenu(mes_window, self.mes, "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
+
+        self.option_menu_mes.pack(pady=5)
+
+        # seleccionar mes
+        self.btn_seleccionar_mes = tk.Button(mes_window, text="Seleccionar mes", command=self.seleccionar_mes)
+        self.btn_seleccionar_mes.pack(pady=5)
+
+    def seleccionar_mes(self):
+        mes_elegido = self.mes.get()
+        self.mes.set(mes_elegido)
+        print(mes_elegido)
+
+        
     def generar_pdf_personalizado(self):
         pass
