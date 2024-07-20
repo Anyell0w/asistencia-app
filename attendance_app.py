@@ -29,7 +29,7 @@ class AttendanceApp:
         self.btn_registrar = tk.Button(self.frame_dni, text="Registrar", command=self.registrar_asistencia)
         self.btn_registrar.pack(side=tk.LEFT, padx=5)
         self.btn_admin = tk.Button(self.frame_dni, text="Admin", command=self.admin_window)
-        self.btn_admin.pack(side=tk.LEFT, padx=5)
+        self.btn_admin.pack(side=tk.LEFT, padx{5})
 
     def admin_window(self):
         # Ingresar Credenciales de admin
