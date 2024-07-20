@@ -6,12 +6,12 @@ class DatabaseManager:
         self.conn = sqlite3.connect("./usuarios.db")
         self.cursor = self.conn.cursor()
 
-    def insert_user(self, dni, nombres, apellido_paterno, apellido_materno, fecha_registro):
+    def insert_user(self, dni, nombres, apellido_paterno, apellido_materno, fecha_registro, asistio):
         query = """
-        INSERT INTO usuario (dni, nombres, apellido_paterno, apellido_materno, fecha_registro)
+        INSERT INTO usuario (dni, nombres, apellido_paterno, apellido_materno, fecha_registro, asisitio)
         VALUES (?, ?, ?, ?, ?)
         """
-        self.cursor.execute(query, (dni, nombres, apellido_paterno, apellido_materno, fecha_registro))
+        self.cursor.execute(query, (dni, nombres, apellido_paterno, apellido_materno, fecha_registro, asistio))
         self.conn.commit()
 
     def update_user(self, user_id, dni, nombres, apellido_paterno, apellido_materno, fecha_registro):
@@ -71,7 +71,17 @@ class DatabaseManager:
     def _del_(self):
         self.conn.close()
 
+
     def get_column(self):
         query = "PRAGMA table_info(usuario)"
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
+
+    def get_all_users_sin_repetir(self):
+        query = """
+        SELECT DISTINCT usuario.id, usuario.dni, usuario.nombres, usuario.apellido_paterno, usuario.apellido_materno, usuario.fecha_registro, usuario.asistio
+        FROM usuario
+        """
         self.cursor.execute(query)
         return self.cursor.fetchall()
