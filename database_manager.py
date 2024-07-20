@@ -80,7 +80,7 @@ class DatabaseManager:
 
     def get_all_users_sin_repetir(self):
         query = """
-        SELECT DISTINCT usuario.id, usuario.dni, usuario.nombres, usuario.apellido_paterno, usuario.apellido_materno, usuario.asistio
+        SELECT DISTINCT usuario.id, usuario.dni, usuario.nombres, usuario.apellido_paterno, usuario.apellido_materno, usuario.fecha_registro, usuario.asistio
         FROM usuario
         """
         self.cursor.execute(query)

@@ -30,6 +30,20 @@ class AttendanceApp:
         self.btn_registrar.pack(side=tk.LEFT, padx=5)
         self.btn_admin = tk.Button(self.frame_dni, text="Admin", command=self.admin_window)
         self.btn_admin.pack(side=tk.LEFT, padx=5)
+        # si presiona enter se registra la asistencia
+        self.root.bind("<Return>", lambda event: self.registrar_asistencia())
+
+        # agregar un reloj en la ventana
+        self.tl = tk.Label(self.root, text="Hora y Fecha Actual", font=('calibri', 20, 'bold'))
+        self.tl.pack()
+        self.lbl_reloj = tk.Label(self.root, text="")
+        self.lbl_reloj.pack()
+        self.update_reloj()
+        
+    def update_reloj(self):
+        now = datetime.datetime.now()
+        self.lbl_reloj.config(text=now.strftime("%Y-%m-%d || %H:%M:%S"))
+        self.root.after(1000, self.update_reloj)
 
     def admin_window(self):
         # Ingresar Credenciales de admin
@@ -89,6 +103,8 @@ class AttendanceApp:
         # boton para volver al menu principal
         self.btn_volver = tk.Button(self.frame_admin, text="Volver", command=self.volver)
         self.btn_volver.pack(side=tk.RIGHT, padx=5)
+
+        #enter para registrar asistencia
 
     def volver(self):
         # para volver al registro de asistencia
@@ -230,6 +246,7 @@ class AttendanceApp:
         dia = datetime.datetime.now().strftime('%Y-%m-%d')
         hora = datetime.datetime.now().strftime('%H-%M-%S')
         data = self.db_manager.get_all_users_sin_repetir()
+        fecha_registro = [usuario[5] for usuario in data]
         
         PDFGenerator(f"asistencia_{dia}_{hora}.pdf").generar_pdf_del_dia(dia, data)
 

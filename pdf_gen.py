@@ -25,15 +25,18 @@ class PDFGenerator:
         self.c.drawString(4 * inch, 10 * inch, "Asistió")
         y = 9.5 * inch
 
-
-        
         # verificar segun la fecha si asisitión o no, si no hay fecha, no asistió
+        hoy = datetime.datetime.now().strftime("%Y-%m-%d")
+        fecha_registro = datetime.datetime.strptime(hoy, "%Y-%m-%d")
 
-        
+
         
         for usuario in data:
-            usuario_id, dni, nombres, apellido_paterno, apellido_materno, asistio = usuario
-            asistencia = "✓"
+            usuario_id, dni, nombres, apellido_paterno, apellido_materno, fecha_registro,asistio = usuario
+            if fecha_registro == dia:
+                asistencia = "Si"
+            else:
+                asistencia = "No"
             self.c.drawString(1 * inch, y, str(usuario_id))
             self.c.drawString(2 * inch, y, str(dni))
             self.c.drawString(3 * inch, y, nombres)
@@ -45,7 +48,6 @@ class PDFGenerator:
 
     def generar_pdf_del_mes(self, mes):
         pass
-
 
     def generar_pdf_personalizado(self, fecha_inicio, fecha_fin):
         pass
