@@ -1,15 +1,13 @@
-import tkinter as tk
+tkinter as tk
 from tkinter import messagebox, filedialog
 import pandas as pd
 from api_client import APIClient
 from database_manager import DatabaseManager
-from pdf_generator import generar_pdf
-# datetime
-from datetime import date
-# timedelta
-from datetime import timedelta
 from Login import Login
 import datetime
+from datetime import date, timedelta    
+from tkcalendar import DateEntry
+from pdf_gen import PDFGenerator
 
 
 class AttendanceApp:
@@ -29,9 +27,23 @@ class AttendanceApp:
         self.entry_dni = tk.Entry(self.frame_dni)
         self.entry_dni.pack(side=tk.LEFT, padx=5)
         self.btn_registrar = tk.Button(self.frame_dni, text="Registrar", command=self.registrar_asistencia)
-        self.btn_registrar.pack(side=tk.LEFT, padx=5)
+        self.btn_registrar.pack(side=tk.LEFT, padx5)
         self.btn_admin = tk.Button(self.frame_dni, text="Admin", command=self.admin_window)
         self.btn_admin.pack(side=tk.LEFT, padx=5)
+        # si presiona enter se registra la asistencia
+        self.root.bind("<Return>", lambda event: self.registrar_asistencia())
+
+        # agregar un reloj en la ventana
+        self.tl = tk.Label(self.root, text="Hora y Fecha Actual", font=('calibri', 20, 'bold'))
+        self.tl.pack()
+        self.lbl_reloj = tk.Label(self.root, text="")
+        self.lbl_reloj.pack()
+        self.update_reloj()
+
+    def update_reloj(self):
+        now = datetime.datetime.now()
+        self.lbl_reloj.config(text=now.strftime("%Y-%m-%d || %H:%M:%S"))
+        self.root.after(1000, self.update_reloj)
 
     def admin_window(self):
         # Ingresar Credenciales de admin
@@ -78,6 +90,8 @@ class AttendanceApp:
 
         self.btn_generar_pdf = tk.Button(self.frame_admin, text="Generar PDF", command=self.generar_pdf_opciones)
         self.btn_generar_pdf.pack(side=tk.LEFT, padx=5)
+        fecha = datetime.datetime.now().strftime('%Y-%m-%d')
+        usuarios = self.db_manager.get_users_by_date(fecha)
 
         # Frame para mostrar resultados de búsqueda
         self.frame_resultados = tk.Frame(self.root)
@@ -86,9 +100,23 @@ class AttendanceApp:
         self.resultados_text = tk.Text(self.frame_resultados, height=10, width=80)
         self.resultados_text.pack()
 
+        # boton para volver al menu principal
+        self.btn_volver = tk.Button(self.frame_admin, text="Volver", command=self.volver)
+        self.btn_volver.pack(side=tk.RIGHT, padx=5)
+
+        #enter para registrar asistencia
+
+    def volver(self):
+        # para volver al registro de asistencia
+        self.frame_admin.destroy()
+        self.frame_resultados.destroy()
+        self.__init__(self.root, "attendance.db", "API_TOKEN")
+
     def cargar_excel(self):
         file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
         if file_path:
+            fecha = datetime.datetime.now().strftime('%Y-%m-%d')
+            usuarios = self.db_manager.get_users_by_date(fecha)
             self.excel_data = pd.read_excel(file_path)
             # subir datos a la base de datos
             for index, row in self.excel_data.iterrows():
@@ -98,7 +126,7 @@ class AttendanceApp:
                 apellido_materno = row['Apellido Materno']
                 fecha_registro = datetime.datetime.now().strftime('%Y-%m-%d')
                 self.db_manager.insert_user(dni, nombres, apellido_paterno, apellido_materno, fecha_registro)
-            messagebox.showinfo("Éxito", "Archivo Excel cargado correctamente")
+                messagebox.showinfo("Éxito", "Archivo Excel cargado correctamente")
 
     def registrar_asistencia(self):
         dni = self.entry_dni.get()
@@ -107,7 +135,8 @@ class AttendanceApp:
             return
 
         existing_user = self.db_manager.get_user_by_dni(dni)
-        if existing_user:
+        existing_user_by_date = self.db_manager.get_users_by_date(datetime.datetime.now().strftime('%Y-%m-%d'))
+        if existing_user or existing_user_by_date[0][1] == dni:
             messagebox.showwarning("Advertencia", "Este usuario ya ha sido registrado.")
             return
 
@@ -123,8 +152,9 @@ class AttendanceApp:
         apellido_paterno = user_info['apellidoPaterno']
         apellido_materno = user_info['apellidoMaterno']
         fecha_registro = "2024-07-05"  # Se puede cambiar por la fecha actual
+        asistio = 1
 
-        self.db_manager.insert_user(dni, nombres, apellido_paterno, apellido_materno, fecha_registro)
+        self.db_manager.insert_user(dni, nombres, apellido_paterno, apellido_materno, fecha_registro, asistio)
         messagebox.showinfo("Éxito", "Asistencia registrada correctamente")
 
     def nuevo_usuario(self):
@@ -165,8 +195,10 @@ class AttendanceApp:
         apellido_paterno = self.entry_apellido_paterno.get()
         apellido_materno = self.entry_apellido_materno.get()
         fecha_registro = datetime.datetime.now().strftime('%Y-%m-%d')
+        asistio = 1
 
-        self.db_manager.insert_user(dni, nombres, apellido_paterno, apellido_materno, fecha_registro)
+        self.db_manager.insert_user(dni, nombres, apellido_paterno, apellido_materno, fecha_registro, asistio)
+        self.db_manager.registrar_asistencia(dni, fecha_registro, True)
         messagebox.showinfo("Éxito", "Usuario registrado correctamente")
         self.root_nuevo_usuario.destroy()
 
@@ -199,26 +231,96 @@ class AttendanceApp:
         opciones_window = tk.Toplevel(self.root)
         opciones_window.title("Generar PDF")
 
-        tk.Label(opciones_window, text="Seleccione el rango de fechas:").pack(pady=5)
+        tk.Label(opciones_window, text="Seleccione una opcion").pack(pady=5)
 
-        tk.Button(opciones_window, text="Día", command=lambda: self.generar_pdf_rango('dia')).pack(pady=5)
-        tk.Button(opciones_window, text="Semana", command=lambda: self.generar_pdf_rango('semana')).pack(pady=5)
-        tk.Button(opciones_window, text="Mes", command=lambda: self.generar_pdf_rango('mes')).pack(pady=5)
+        self.btn_pdf_dia = tk.Button(opciones_window, text="Generar reporte del día", command=self.generar_pdf_dia)
+        self.btn_pdf_dia.pack(pady=5)
 
-    def generar_pdf_rango(self, rango):
-        rango = rango.lower()
-        if rango == 'dia':
-            fecha_inicio = date.today()
-            fecha_fin = date.today()
-        elif rango == 'semana':
-            fecha_inicio = date.today() - timedelta(days=date.today().weekday())
-            fecha_fin = date.today() + timedelta(days=6-date.today().weekday())
-        elif rango == 'mes':
-            fecha_inicio = date.today().replace(day=1)
-            fecha_fin = date.today().replace(day=date.today().day, month=date.today().month+1) - timedelta(days=1)
+        self.btn_pdf_semana = tk.Button(opciones_window, text="Generar reporte de la semana", command=self.generar_pdf_semana)
+        self.btn_pdf_semana.pack(pady=5)
 
-        self.usuarios = self.db_manager.get_users_by_date_range(fecha_inicio, fecha_fin)
-        self.filename = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
+        self.btn_pdf_mes = tk.Button(opciones_window, text="Generar reporte del mes", command=self.generar_pdf_mes)
+        self.btn_pdf_mes.pack(pady=5)
 
-        generar_pdf(self.usuarios, self.fil
+        self.btn_pdf_personalizado = tk.Button(opciones_window, text="Generar reporte personalizado", command=self.generar_pdf_personalizado)
+        self.btn_pdf_personalizado.pack(pady=5)
+
+    def generar_pdf_dia(self):
+        dia = datetime.datetime.now().strftime('%Y-%m-%d')
+        hora = datetime.datetime.now().strftime('%H-%M-%S')
+        data = self.db_manager.get_all_users_sin_repetir()
+        fecha_registro = [usuario[5] for usuario in data]
+        
+        PDFGenerator(f"asistencia_{dia}_{hora}.pdf").generar_pdf_del_dia(dia, data)
+
+    def generar_pdf_semana(self):
+        hoy = date.today()
+        inicio_semana = hoy - timedelta(days=hoy.weekday())
+        fin_semana = inicio_semana + timedelta(days=6)
+        hora = datetime.datetime.now().strftime('%H-%M-%S')
+        data = self.db_manager.get_all_users_sin_repetir()
+        PDFGenerator(f"asistencia_semana_{inicio_semana}_{fin_semana}_{hora}.pdf").generar_pdf_personalizado(inicio_semana, fin_semana, data)
+
+    def generar_pdf_mes(self):
+        # elegir el mes
+        mes_window = tk.Toplevel(self.root)
+        mes_window.title("Generar PDF del mes")
+
+        # desplegable para elegir el mes
+        tk.Label(mes_window, text="Seleccione el mes").pack(pady=5)
+        self.mes = tk.StringVar(mes_window)
+        self.mes.set("Enero")
+        self.option_menu_mes = tk.OptionMenu(mes_window, self.mes, "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
+
+        self.option_menu_mes.pack(pady=5)
+
+        # seleccionar mes
+        self.btn_seleccionar_mes = tk.Button(mes_window, text="Seleccionar mes", command=self.seleccionar_mes)
+        self.btn_seleccionar_mes.pack(pady=5)
+        #elegir mes
+    def seleccionar_mes(self):
+        mes_elegido = self.mes.get()
+        mes_num = {"Enero": "01", "Febrero": "02", "Marzo": "03", "Abril": "04", "Mayo": "05", "Junio": "06", "Julio": "07", "Agosto": "08", "Septiembre": "09", "Octubre": "10", "Noviembre": "11", "Diciembre": "12"}[mes_elegido]
+        hoy = date.today()
+        ano = hoy.year
+        inicio_mes = date(ano, int(mes_num), 1)
+        if mes_num == "12":
+            fin_mes = date(ano + 1, 1, 1) - timedelta(days=1)
+        else:
+            fin_mes = date(ano, int(mes_num) + 1, 1) - timedelta(days=1)
+        hora = datetime.datetime.now().strftime('%H-%M-%S')
+        data = self.db_manager.get_all_users_sin_repetir()
+        PDFGenerator(f"asistencia_mes_{mes_elegido}_{ano}_{hora}.pdf").generar_pdf_personalizado(inicio_mes, fin_mes, data)
+
+    def generar_pdf_personalizado(self):
+        personalizado_window = tk.Toplevel(self.root)
+        personalizado_window.title("Generar PDF Personalizado")
+
+        tk.Label(personalizado_window, text="Seleccione el rango de fechas").pack(pady=5)
+
+        self.lbl_fecha_inicio = tk.Label(personalizado_window, text="Fecha de Inicio:")
+        self.lbl_fecha_inicio.pack(pady=5)
+        self.fecha_inicio = DateEntry(personalizado_window)
+        self.fecha_inicio.pack(pady=5)
+
+        self.lbl_fecha_fin = tk.Label(personalizado_window, text="Fecha de Fin:")
+        self.lbl_fecha_fin.pack(pady=5)
+        self.fecha_fin = DateEntry(personalizado_window)
+        self.fecha_fin.pack(pady=5)
+
+        self.btn_generar = tk.Button(personalizado_window, text="Generar", command=self.generar_pdf_rango)
+        self.btn_generar.pack(pady=5)
+
+    def generar_pdf_rango(self):
+        inicio = self.fecha_inicio.get_date()
+        fin = self.fecha_fin.get_date()
+        hora = datetime.datetime.now().strftime('%H-%M-%S')
+        data = self.db_manager.get_all_users_sin_repetir()
+        PDFGenerator(f"asistencia_rango_{inicio}_{fin}_{hora}.pdf").generar_pdf_personalizado(inicio, fin, data)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = AttendanceApp(root, "attendance.db", "API_TOKEN")
+    root.mainloop()
+
                 
