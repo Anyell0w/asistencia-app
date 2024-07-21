@@ -267,11 +267,47 @@ class AttendanceApp:
         self.btn_seleccionar_mes = tk.Button(mes_window, text="Seleccionar mes", command=self.seleccionar_mes)
         self.btn_seleccionar_mes.pack(pady=5)
 
-    def seleccionar_mes(self):
+        def seleccionar_mes(self):
         mes_elegido = self.mes.get()
-        self.mes.set(mes_elegido)
-        print(mes_elegido)
+        mes_num = {"Enero": "01", "Febrero": "02", "Marzo": "03", "Abril": "04", "Mayo": "05", "Junio": "06", "Julio": "07", "Agosto": "08", "Septiembre": "09", "Octubre": "10", "Noviembre": "11", "Diciembre": "12"}[mes_elegido]
+        hoy = date.today()
+        ano = hoy.year
+        inicio_mes = date(ano, int(mes_num), 1)
+        if mes_num == "12":
+            fin_mes = date(ano + 1, 1, 1) - timedelta(days=1)
+        else:
+            fin_mes = date(ano, int(mes_num) + 1, 1) - timedelta(days=1)
+        hora = datetime.datetime.now().strftime('%H-%M-%S')
+        data = self.db_manager.get_all_users_sin_repetir()
+        PDFGenerator(f"asistencia_mes_{mes_elegido}_{ano}_{hora}.pdf").generar_pdf_personalizado(inicio_mes, fin_mes, data)
 
-        
     def generar_pdf_personalizado(self):
-        pass
+        personalizado_window = tk.Toplevel(self.root)
+        personalizado_window.title("Generar PDF Personalizado")
+
+        tk.Label(personalizado_window, text="Seleccione el rango de fechas").pack(pady=5)
+
+        self.lbl_fecha_inicio = tk.Label(personalizado_window, text="Fecha de Inicio:")
+        self.lbl_fecha_inicio.pack(pady=5)
+        self.fecha_inicio = DateEntry(personalizado_window)
+        self.fecha_inicio.pack(pady=5)
+
+        self.lbl_fecha_fin = tk.Label(personalizado_window, text="Fecha de Fin:")
+        self.lbl_fecha_fin.pack(pady=5)
+        self.fecha_fin = DateEntry(personalizado_window)
+        self.fecha_fin.pack(pady=5)
+
+        self.btn_generar = tk.Button(personalizado_window, text="Generar", command=self.generar_pdf_rango)
+        self.btn_generar.pack(pady=5)
+
+    def generar_pdf_rango(self):
+        inicio = self.fecha_inicio.get_date()
+        fin = self.fecha_fin.get_date()
+        hora = datetime.datetime.now().strftime('%H-%M-%S')
+        data = self.db_manager.get_all_users_sin_repetir()
+        PDFGenerator(f"asistencia_rango_{inicio}_{fin}_{hora}.pdf").generar_pdf_personalizado(inicio, fin, data)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = AttendanceApp(root, "attendance.db", "API_TOKEN")
+    root.mainloop()
