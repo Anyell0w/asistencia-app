@@ -220,4 +220,5 @@ class AttendanceApp:
         self.usuarios = self.db_manager.get_users_by_date_range(fecha_inicio, fecha_fin)
         self.filename = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
 
-        generar_pdf(self.usuarios, self.filename)
+        generar_pdf(self.usuarios, self.fil
+                
