@@ -136,7 +136,7 @@ class AttendanceApp:
 
         existing_user = self.db_manager.get_user_by_dni(dni)
         existing_user_by_date = self.db_manager.get_users_by_date(datetime.datetime.now().strftime('%Y-%m-%d'))
-        if existing_user or existing_user_by_date[0][1] == dni:
+        if existing_user_by_date == dni:
             messagebox.showwarning("Advertencia", "Este usuario ya ha sido registrado.")
             return
 
@@ -198,7 +198,6 @@ class AttendanceApp:
         asistio = 1
 
         self.db_manager.insert_user(dni, nombres, apellido_paterno, apellido_materno, fecha_registro, asistio)
-        self.db_manager.registrar_asistencia(dni, fecha_registro, True)
         messagebox.showinfo("Éxito", "Usuario registrado correctamente")
         self.root_nuevo_usuario.destroy()
 
@@ -236,8 +235,6 @@ class AttendanceApp:
         self.btn_pdf_dia = tk.Button(opciones_window, text="Generar reporte del día", command=self.generar_pdf_dia)
         self.btn_pdf_dia.pack(pady=5)
 
-        self.btn_pdf_mes = tk.Button(opciones_window, text="Generar reporte del mes", command=self.generar_pdf_mes)
-        self.btn_pdf_mes.pack(pady=5)
 
         self.btn_pdf_personalizado = tk.Button(opciones_window, text="Generar reporte personalizado", command=self.generar_pdf_personalizado)
         self.btn_pdf_personalizado.pack(pady=5)
@@ -246,40 +243,9 @@ class AttendanceApp:
         dia = datetime.datetime.now().strftime('%Y-%m-%d')
         hora = datetime.datetime.now().strftime('%H-%M-%S')
         data = self.db_manager.get_all_users_sin_repetir()
-        fecha_registro = [usuario[5] for usuario in data]
         
         PDFGenerator(f"asistencia_{dia}_{hora}.pdf").generar_pdf_del_dia(dia, data)
 
-    def generar_pdf_mes(self):
-        # elegir el mes
-        mes_window = tk.Toplevel(self.root)
-        mes_window.title("Generar PDF del mes")
-
-        # desplegable para elegir el mes
-        tk.Label(mes_window, text="Seleccione el mes").pack(pady=5)
-        self.mes = tk.StringVar(mes_window)
-        self.mes.set("Enero")
-        self.option_menu_mes = tk.OptionMenu(mes_window, self.mes, "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
-
-        self.option_menu_mes.pack(pady=5)
-
-        # seleccionar mes
-        self.btn_seleccionar_mes = tk.Button(mes_window, text="Seleccionar mes", command=self.seleccionar_mes)
-        self.btn_seleccionar_mes.pack(pady=5)
-
-        def seleccionar_mes(self):
-        mes_elegido = self.mes.get()
-        mes_num = {"Enero": "01", "Febrero": "02", "Marzo": "03", "Abril": "04", "Mayo": "05", "Junio": "06", "Julio": "07", "Agosto": "08", "Septiembre": "09", "Octubre": "10", "Noviembre": "11", "Diciembre": "12"}[mes_elegido]
-        hoy = date.today()
-        ano = hoy.year
-        inicio_mes = date(ano, int(mes_num), 1)
-        if mes_num == "12":
-            fin_mes = date(ano + 1, 1, 1) - timedelta(days=1)
-        else:
-            fin_mes = date(ano, int(mes_num) + 1, 1) - timedelta(days=1)
-        hora = datetime.datetime.now().strftime('%H-%M-%S')
-        data = self.db_manager.get_all_users_sin_repetir()
-        PDFGenerator(f"asistencia_mes_{mes_elegido}_{ano}_{hora}.pdf").generar_pdf_personalizado(inicio_mes, fin_mes, data)
 
     def generar_pdf_personalizado(self):
         personalizado_window = tk.Toplevel(self.root)

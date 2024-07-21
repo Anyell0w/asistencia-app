@@ -8,8 +8,8 @@ class DatabaseManager:
 
     def insert_user(self, dni, nombres, apellido_paterno, apellido_materno, fecha_registro, asistio):
         query = """
-        INSERT INTO usuario (dni, nombres, apellido_paterno, apellido_materno, fecha_registro, asisitio)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO usuario (dni, nombres, apellido_paterno, apellido_materno, fecha_registro, asistio)
+        VALUES (?, ?, ?, ?, ?, ?)
         """
         self.cursor.execute(query, (dni, nombres, apellido_paterno, apellido_materno, fecha_registro, asistio))
         self.conn.commit()
